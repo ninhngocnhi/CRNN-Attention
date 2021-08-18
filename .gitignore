@@ -1,0 +1,6 @@
+g
+*.log
+*.tmp
+.idea/
+.vscode/
+data/*.txt
