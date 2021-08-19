@@ -84,7 +84,7 @@ class attention_ocr():
         return words, prob
 
 if __name__ == '__main__':
-    path = '/home/ngoc/ml/crnn/tts/InkData_line_processed/20140603_0043_BCCTC_tg_3_1.png'
+    path = '/home/ngoc/ml/CRNN_Attention/data/20160722_0202_26749_1_tg_7_1.png'
     img = cv2.imread(path)
     attention = attention_ocr()
     res = attention.predict(img)
