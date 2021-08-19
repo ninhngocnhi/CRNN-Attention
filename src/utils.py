@@ -10,16 +10,6 @@ with open('/home/ngoc/ml/crnn/tts/InkData_line_processed/char') as f:
 f.close()
 
 class strLabelConverterForAttention(object):
-    """Convert between str and label.
-
-    NOTE:
-        Insert `EOS` to the alphabet for attention.
-
-    Args:
-        alphabet (str): set of the possible characters.
-        ignore_case (bool, default=True): whether or not to ignore all of the case.
-    """
-
     def __init__(self, alphabet):
         self.alphabet = alphabet
 
@@ -30,14 +20,6 @@ class strLabelConverterForAttention(object):
             self.dict[item] = i + 2            
 
     def encode(self, text):
-        """对target_label做编码和对齐
-        对target txt每个字符串的开始加上GO，最后加上EOS，并用最长的字符串做对齐
-        Args:
-            text (str or list of str): texts to convert.
-
-        Returns:
-            torch.IntTensor targets:max_length × batch_size
-        """
         if isinstance(text, str):
             text = [self.dict[item] for item in text]
         elif isinstance(text, collections.Iterable):
@@ -55,19 +37,6 @@ class strLabelConverterForAttention(object):
         return torch.LongTensor(text)
 
     def decode(self, t):
-        """Decode encoded texts back into strs.
-
-        Args:
-            torch.IntTensor [length_0 + length_1 + ... length_{n - 1}]: encoded texts.
-            torch.IntTensor [n]: length of each text.
-
-        Raises:
-            AssertionError: when the texts and its length does not match.
-
-        Returns:
-            text (str or list of str): texts to convert.
-        """
-
         texts = list(self.dict.keys())[list(self.dict.values()).index(t)]
         return texts
 
@@ -76,8 +45,6 @@ def loadData(v, data):
       v.resize_(data.size()).copy_(data)
 
 class averager(object):
-    """Compute average for `torch.Variable` and `torch.Tensor`. """
-
     def __init__(self):
         self.reset()
 

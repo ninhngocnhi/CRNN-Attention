@@ -70,9 +70,9 @@ class CNN(nn.Module):
         self.cnn = cnn
 
         self.rnn = nn.Sequential(
-            BidirectionalLSTM(512, nh, nh),
-            BidirectionalLSTM(nh, nh, nh)
-            )
+            BidirectionalLSTM(512, nh),
+            BidirectionalLSTM(nh, nh)
+        )
 
     def forward(self, input):
         conv = self.cnn(input)

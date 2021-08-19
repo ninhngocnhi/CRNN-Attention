@@ -9,6 +9,7 @@ import models.crnn_attention as crnn
 from src.utils import alphabet
 import matplotlib.pyplot as plt
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class attention_ocr():
     def __init__(self):
@@ -27,8 +28,8 @@ class attention_ocr():
 
         if encoder_path and decoder_path:
             print('loading pretrained models ......')
-            encoder.load_state_dict(torch.load(encoder_path))
-            decoder.load_state_dict(torch.load(decoder_path))
+            encoder.load_state_dict(torch.load(encoder_path, map_location=device))
+            decoder.load_state_dict(torch.load(decoder_path, map_location=device))
         if torch.cuda.is_available() and self.use_gpu:
             encoder = encoder.cuda()
             decoder = decoder.cuda()
@@ -83,7 +84,7 @@ class attention_ocr():
         return words, prob
 
 if __name__ == '__main__':
-    path = '/home/ngoc/ml/crnn/tts/InkData_line_processed/20140603_0043_BCCTC_tg_2_5.png'
+    path = '/home/ngoc/ml/crnn/tts/InkData_line_processed/20140603_0043_BCCTC_tg_3_1.png'
     img = cv2.imread(path)
     attention = attention_ocr()
     res = attention.predict(img)

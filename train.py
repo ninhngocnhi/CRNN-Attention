@@ -18,9 +18,9 @@ import models.crnn_attention as crnn
 print(crnn.__name__)
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--path',  default='', help='where to ascess image')
-parser.add_argument('--trainlist',  default='./data/ch_train.txt')
-parser.add_argument('--vallist',  default='./data/ch_test.txt')
+parser.add_argument('--path',  default='data/', help='where to ascess image')
+parser.add_argument('--trainlist',  default='data/train')
+parser.add_argument('--vallist',  default='data/test')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=2)
 parser.add_argument('--batchSize', type=int, default=4, help='input batch size')
 parser.add_argument('--imgH', type=int, default=32, help='the height of the input image to network')
@@ -29,10 +29,10 @@ parser.add_argument('--nh', type=int, default=256, help='size of the lstm hidden
 parser.add_argument('--niter', type=int, default=21, help='number of epochs to train for')
 parser.add_argument('--lr', type=float, default=0.001, help='learning rate for Critic, default=0.00005')
 parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam. default=0.5')
-parser.add_argument('--cuda', action='store_true', help='enables cuda', default=True)
-parser.add_argument('--ngpu', type=int, default=1, help='number of GPUs to use')
-parser.add_argument('--encoder', type=str, default='', help="path to encoder (to continue training)")
-parser.add_argument('--decoder', type=str, default='', help='path to decoder (to continue training)')
+parser.add_argument('--cuda', action='store_true', help='enables cuda', default=False)
+parser.add_argument('--ngpu', type=int, default=0, help='number of GPUs to use')
+parser.add_argument('--encoder', type=str, default='expr/encoder_450.pth', help="path to encoder (to continue training)")
+parser.add_argument('--decoder', type=str, default='expr/decoder_450.pth', help='path to decoder (to continue training)')
 parser.add_argument('--experiment', default='./expr/attentioncnn', help='Where to store samples and models')
 parser.add_argument('--displayInterval', type=int, default=10, help='Interval to be displayed')
 parser.add_argument('--valInterval', type=int, default=1, help='Interval to be displayed')
@@ -50,6 +50,7 @@ SOS_token = 0
 EOS_TOKEN = 1              
 BLANK = 2                  
 
+device = torch.device("cuda:0" if opt.cuda else "cpu")
 
 if opt.experiment is None:
     opt.experiment = 'expr'
@@ -93,20 +94,20 @@ decoder = crnn.AttentionDec(nclass, opt.nh)
 encoder.apply(weights_init)
 decoder.apply(weights_init)
 
-state_dict_init = encoder.state_dict()
-state_dict = torch.load("/content/expr/attentioncnn/netCRNN_50.pth")
-pretrained_dict = {k: v for k, v in state_dict.items() if "cnn" in k }
-state_dict_init.update(pretrained_dict)
-encoder.load_state_dict(state_dict_init)
+# state_dict_init = encoder.state_dict()
+# state_dict = torch.load("/content/expr/attentioncnn/netCRNN_50.pth")
+# pretrained_dict = {k: v for k, v in state_dict.items() if "cnn" in k }
+# state_dict_init.update(pretrained_dict)
+# encoder.load_state_dict(state_dict_init)
 
-# if opt.encoder:
-#     print('loading pretrained encoder model from %s' % opt.encoder)
-#     encoder.load_state_dict(torch.load(opt.encoder))
-# if opt.decoder:
-#     print('loading pretrained encoder model from %s' % opt.decoder)
-#     decoder.load_state_dict(torch.load(opt.decoder))
-# print(encoder)
-# print(decoder)
+if opt.encoder:
+    print('loading pretrained encoder model from %s' % opt.encoder)
+    encoder.load_state_dict(torch.load(opt.encoder))
+if opt.decoder:
+    print('loading pretrained encoder model from %s' % opt.decoder)
+    decoder.load_state_dict(torch.load(opt.decoder))
+print(encoder)
+print(decoder)
 
 image = torch.FloatTensor(opt.batchSize, 3, opt.imgH, opt.imgH)
 text = torch.LongTensor(opt.batchSize * 5)
@@ -166,9 +167,9 @@ def val(encoder, decoder, criterion, batchsize, dataset, teach_forcing=False, ma
         decoded_label = []
         decoder_attentions = torch.zeros(len(cpu_texts[0]) + 1, opt.max_width)
         encoder_outputs = encoder(image)           
-        target_variable = target_variable.cuda()
-        decoder_input = target_variable[0].cuda()  
-        decoder_hidden = decoder.initHidden(b).cuda()
+        target_variable = target_variable.to(device)
+        decoder_input = target_variable[0].to(device)
+        decoder_hidden = decoder.initHidden(b).to(device)
         loss = 0.0
         if not teach_forcing:
             for di in range(1, target_variable.shape[0]):  
@@ -209,9 +210,9 @@ def trainBatch(encoder, decoder, criterion, encoder_optimizer, decoder_optimizer
     target_variable = converter.encode(cpu_texts)
     utils.loadData(image, cpu_images)
     encoder_outputs = encoder(image)              
-    target_variable = target_variable.cuda()
-    decoder_input = target_variable[0].cuda()      
-    decoder_hidden = decoder.initHidden(b).cuda()
+    target_variable = target_variable.to(device)
+    decoder_input = target_variable[0].to(device)     
+    decoder_hidden = decoder.initHidden(b).to(device)
     loss = 0.0
     teach_forcing = True if random.random() > teach_forcing_prob else False
     if teach_forcing:
